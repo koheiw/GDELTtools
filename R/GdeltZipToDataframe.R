@@ -14,7 +14,8 @@ GdeltZipToDataframe <- function(f, daily=FALSE, verbose=TRUE) {
                     stringsAsFactors=FALSE,
                     col.names=gdelt.colNames,
                     colClasses=gdelt.colClasses,
-                    na.strings=c("NA", ""))
+                    na.strings=c("NA", ""),
+                    strip.white=TRUE)
   
   if(daily) {
     for(field.name in daily.cols.w.errors) {

@@ -11,8 +11,7 @@
 #' @param max.local.mb numeric, the maximum size in MB of the downloaded files that will be retained.
 #' @param allow.wildcards logical, must be TRUE to use * in \code{filter} to specify 'any character(s)'.
 #' @param use.regex logical, if TRUE then \code{filter} will be processed as a \code{\link{regular expression}}.
-#' @param historical.url.root character, URL from which historical files will be downloaded.
-#' @param daily.url.root character, URL from which daily files will be downloaded.
+#' @param data.url.root character, URL for the folder with GDELT data files.
 #' @param verbose logical, if TRUE then indications of progress will be displayed.
 #' @return data.frame
 #' @export
@@ -34,7 +33,7 @@
 #' GDELT: Global Data on Events, Location and Tone, 1979-2012.  
 #' Presented at the 2013 meeting of the International Studies Association
 #' in San Francisco, CA.
-#' \url{http://gdelt.utdallas.edu/}
+#' \url{http://www.gdeltproject.org/}
 #' @author 
 #' \tabular{ll}{
 #'   Stephen R. Haptonstahl \tab \email{srh@@haptonstahl.org}\cr
@@ -44,15 +43,16 @@
 #' @examples
 #' \dontrun{
 #' test.filter <- list(ActionGeo_ADM1Code=c("NI", "US"), ActionGeo_CountryCode="US")
-#' test.results <- GetGDELT(start.date="1979-01-01", end.date="1979-12-31", filter=test.filter)
+#' test.results <- GetGDELT(start.date="1979-01-01", end.date="1979-12-31", 
+#'   filter=test.filter)
 #' table(test.results$ActionGeo_ADM1Code)
-#' table(test.results$ActionGeo_CountryCode} 
+#' table(test.results$ActionGeo_CountryCode)}
 #' 
 #' # Specify a local folder to store the downloaded files
 #' \dontrun{
 #' test.results <- GetGDELT(start.date="1979-01-01", end.date="1979-12-31", 
 #'                          filter=test.filter,
-#'                          local.folder="c:/gdeltdata",
+#'                          local.folder="~/gdeltdata",
 #'                          max.local.mb=500)}
 GetGDELT <- function(start.date,
                      end.date=start.date,
@@ -61,21 +61,33 @@ GetGDELT <- function(start.date,
                      max.local.mb=Inf,
                      allow.wildcards=FALSE, 
                      use.regex=FALSE,
-                     historical.url.root="http://gdelt.utdallas.edu/data/backfiles/",
-                     daily.url.root="http://gdelt.utdallas.edu/data/dailyupdates/",
+                     data.url.root="http://data.gdeltproject.org/events/",
                      verbose=TRUE) {
+  
+  # Coerce ending slashes as needed
+  local.folder <- StripTrailingSlashes(path.expand(local.folder))
+  data.url.root <- paste(StripTrailingSlashes(data.url.root), "/", sep="")
+  # create the local.folder if is doesn't exist
+  dir.create(local.folder, showWarnings=FALSE, recursive = TRUE)
   
   start.date <- strftime(dateParse(start.date), format="%Y-%m-%d")
   end.date <- strftime(dateParse(end.date), format="%Y-%m-%d")
   
+  if(start.date <= "2014-01-25" & end.date >= "2014-01-23") warning("Your date range includes some or all of Feb 23-25, 2014. GDELT data is not available for these dates.")
+  
   out.initialized <- FALSE
   
   # Determine file list based on dates
-  source.files <- FileListFromDates(startdate=start.date, enddate=end.date)
-  source.files <- c(source.files$historic, source.files$daily)
+  source.files <- FileListFromDates(start.date=start.date, end.date=end.date)
+  if(0 == length(source.files)) stop("No GDELT files available for the dates specified")
   
   # Ingest and filter local files
   for(this.file in LocalVersusRemote(filelist=source.files, local.folder=local.folder)$local) {
+    if(FALSE == IsValidGDELT(f=this.file, local.folder=local.folder)) {
+      # remove the offending file; it'll be downloaded in the later loop
+      file.remove(paste(local.folder, "/", this.file, sep=""))
+      next
+    }
     new.data <- GdeltZipToDataframe(f=paste(local.folder, "/", this.file, sep=""),
                                     daily=grepl("export.CSV", this.file, fixed=TRUE),
                                     verbose=verbose)
@@ -97,9 +109,23 @@ GetGDELT <- function(start.date,
     download.result <- DownloadGdelt(f=this.file,
                                      local.folder=local.folder,
                                      max.local.mb=max.local.mb,
-                                     historical.url.root=historical.url.root,
-                                     daily.url.root=daily.url.root,
+                                     data.url.root=data.url.root,
                                      verbose=verbose)
+    if(FALSE == download.result) {
+      stop("Unable to download file ", this.file, ". Please try again. If you get this result again, the file might not be available on the server.")
+    }
+    if(FALSE == IsValidGDELT(f=this.file, local.folder=local.folder)) {
+      # try again
+      download.result <- DownloadGdelt(f=this.file,
+                                       local.folder=local.folder,
+                                       max.local.mb=max.local.mb,
+                                       data.url.root=data.url.root,
+                                       verbose=verbose)
+      if(FALSE == IsValidGDELT(f=this.file, local.folder=local.folder)) {
+        stop("Unable to verify the integrity of ", this.file)
+      }
+    }
+    
     new.data <- GdeltZipToDataframe(f=paste(local.folder, "/", this.file, sep=""),
                                     daily=grepl("export.CSV", this.file, fixed=TRUE),
                                     verbose=verbose)

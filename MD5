@@ -1,0 +1,17 @@
+5ab90baf19a36372cf36c27d30b3e201 *DESCRIPTION
+d2f40264a88812e1bff80f40bac47834 *LICENSE
+b72e122f0ab2eb062f0f9b2e251c4c03 *NAMESPACE
+1e63bf614e2d6f35cb8ded97fed70b84 *R/DownloadGdelt.R
+e417179ef0041185903377a126e16ba1 *R/FileInfo.R
+9072873ffba4717cfa44849afb5f3545 *R/FileListFromDates.R
+f5efc3846416b9e622e2d06e364b832d *R/FilterGdeltDataframe.R
+a2ba7e933cc6184aadf70b138c68b195 *R/GdeltZipToDataframe.R
+3886e527f9ef9f7fcea6e2845d69b593 *R/GetGdelt.R
+7aa58136876121e5f469f7efba39cf0d *R/LocalVersusRemote.R
+ac9008e514ef09e7d1830c25c8c856d9 *R/NormEventCounts.R
+b28a827f41a790e34dde9af9d9507286 *data/NormEventCountsData.RData
+19de94fb0e08af42c787674758ba87b7 *data/datalist
+8881b5d4eb4cac4b6992ffeb603e3f19 *man/GDELTtools-package.Rd
+d92f7187afb5682a31d5d3d689c89b45 *man/GetGdelt.Rd
+0d2c4f7882ef993fbdd35696ea831ad7 *man/NormEventCounts.Rd
+e51925139ad0ac3d31c4667039af1cba *man/NormEventCountsData.Rd

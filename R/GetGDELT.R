@@ -3,8 +3,8 @@
 #' Download the GDELT files necessary for a data set, import them, filter on various criteria, and return a data.frame. 
 #' 
 #' @aliases GetGDELT
-#' @param start_date character, just about any human-readable form of the earliest date to include.
-#' @param end_date character, just about any human-readable form of the latest date to include.
+#' @param start_date character, earliest date to include in "YYYY-MM-DD" format.
+#' @param end_date character, latest date to include in "YYYY-MM-DD" format.
 #' @param local_folder character, if specified, where downloaded files will be saved.
 #' @param max_local_mb numeric, the maximum size in MB of the downloaded files that will be retained.
 #' @param data_url_root character, URL for the folder with GDELT data files.
@@ -15,8 +15,8 @@
 #' @export
 #' @details
 #' 
-#' Dates are parsed with \code{dateParse} in the TimeWarp package. 
-#' Years must be given with four digits.
+#' Dates are parsed with \code{guess_datetime} in the datetimeutils package. 
+#' The recommended format is "YYYY-MM-DD".
 #'
 #' If \code{local_folder} is not specified then downloaded files are stored in
 #' \code{tempdir()}. If a needed file has already been downloaded to \code{local_folder}
@@ -80,8 +80,8 @@ GetGDELT <- function(start_date,
   # create the local_folder if is doesn't exist
   dir.create(local_folder, showWarnings=FALSE, recursive = TRUE)
   
-  start_date <- strftime(dateParse(start_date), format="%Y-%m-%d")
-  end_date <- strftime(dateParse(end_date), format="%Y-%m-%d")
+  start_date <- strftime(guess_datetime(start_date, date.only=TRUE), format="%Y-%m-%d")
+  end_date <- strftime(guess_datetime(end_date, date.only=TRUE), format="%Y-%m-%d")
   
   if(start_date <= "2014-01-25" & end_date >= "2014-01-23") warning("Your date range includes some or all of Feb 23-25, 2014. GDELT data is not available for these dates.")
   
@@ -151,8 +151,8 @@ GetGDELT <- function(start_date,
   }
   
   # Filter one more time on dates
-  start_date_numeric <- as.numeric(strftime(dateParse(start_date), format="%Y%m%d"))
-  end_date_numeric <- as.numeric(strftime(dateParse(end_date), format="%Y%m%d"))
+  start_date_numeric <- as.numeric(strftime(guess_datetime(start_date, date.only=TRUE), format="%Y%m%d"))
+  end_date_numeric <- as.numeric(strftime(guess_datetime(end_date, date.only=TRUE), format="%Y%m%d"))
   out <- out[out$SQLDATE >= start_date_numeric & out$SQLDATE <= end_date_numeric,]
   
   return(out)

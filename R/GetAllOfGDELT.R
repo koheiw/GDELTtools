@@ -88,9 +88,9 @@ GetAllOfGDELT <- function(local_folder,
     
     # return results for this_file
     if(TRUE == this_res) {
-      cat("Downloading or verifying", this_file, "succeeded.\n")
+      cat("Downloading or verifying", this_file, "succeeded.\n\n")
     } else {
-      cat("Downloading or verifying", this_file, "FAILED.\n")
+      cat("Downloading or verifying", this_file, "FAILED.\n\n")
     }
     return(this_res)
   })

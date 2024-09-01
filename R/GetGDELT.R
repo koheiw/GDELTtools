@@ -86,36 +86,15 @@ GetGDELT <- function(start_date,
   if(start_date <= "2014-01-25" & end_date >= "2014-01-23") 
       warning("Your date range includes some or all of Feb 23-25, 2014. GDELT data is not available for these dates.")
 
-  out_initialized <- FALSE
-  
+
   # Determine file list based on dates
   source_files <- FileListFromDates(start_date=start_date, end_date=end_date)
-  if(0 == length(source_files)) stop("No GDELT files available for the dates specified")
-  
-  # Ingest and filter local files
-  for(this_file in LocalVersusRemote(filelist=source_files, local_folder=local_folder)$local) {
-    if(FALSE == IsValidGDELT(f=this_file, local_folder=local_folder)) {
-      # remove the offending file; it'll be downloaded in the later loop
-      file.remove(paste(local_folder, "/", this_file, sep=""))
-      next
-    }
-    new_data <- GdeltZipToDataframe(f=paste(local_folder, "/", this_file, sep=""),
-                                    daily=grepl("export.CSV", this_file, fixed=TRUE),
-                                    verbose=verbose)
-    if(!missing(row_filter) | ...length() > 0) new_data <- FilterGdeltDataframe(x=new_data,
-                                                                                verbose=verbose,
-                                                                                row_filter={{row_filter}},
-                                                                                ...=...)
-    if(out_initialized) {
-      out <- rbind(out, new_data)
-    } else {
-      out <- new_data
-      out_initialized <- TRUE
-    }
-  }
+  if(0 == length(source_files)) 
+      stop("No GDELT files available for the dates specified")
   
   # Download, ingest, and filter remote files
-  for(this_file in LocalVersusRemote(filelist=source_files, local_folder=local_folder)$remote) {
+  out <-data.frame()
+  for(this_file in source_files) {
     download_result <- DownloadGdelt(f=this_file,
                                      local_folder=local_folder,
                                      max_local_mb=max_local_mb,
@@ -133,29 +112,27 @@ GetGDELT <- function(start_date,
                                        data_url_root=data_url_root,
                                        verbose=verbose)
       if(FALSE == IsValidGDELT(f=this_file, local_folder=local_folder)) {
-        stop("Unable to verify the integrity of ", this_file)
+        warning("Unable to verify the integrity of ", this_file)
+        next
       }
     }
     
     new_data <- GdeltZipToDataframe(f=paste(local_folder, "/", this_file, sep=""),
                                     daily=grepl("export.CSV", this_file, fixed=TRUE),
                                     verbose=verbose)
-    if(!missing(row_filter) | ...length() > 0) new_data <- FilterGdeltDataframe(x=new_data,
-                                                                                verbose=verbose,
-                                                                                row_filter={{row_filter}},
-                                                                                ...=...)
-    if(out_initialized) {
-      out <- rbind(out, new_data)
-    } else {
-      out <- new_data
-      out_initialized <- TRUE
-    }
+    if(!missing(row_filter) | ...length() > 0) 
+        new_data <- FilterGdeltDataframe(x=new_data,
+                                         verbose=verbose,
+                                         row_filter={{row_filter}},
+                                         ...=...)
+    out <- rbind(out, new_data)
   }
   
   # Filter one more time on dates
-  start_date_numeric <- as.numeric(strftime(guess_datetime(start_date, date.only=TRUE), format="%Y%m%d"))
-  end_date_numeric <- as.numeric(strftime(guess_datetime(end_date, date.only=TRUE), format="%Y%m%d"))
-  out <- out[out$SQLDATE >= start_date_numeric & out$SQLDATE <= end_date_numeric,]
-  
+  if (nrow(out) > 0) {
+    start_date_numeric <- as.numeric(strftime(guess_datetime(start_date, date.only=TRUE), format="%Y%m%d"))
+    end_date_numeric <- as.numeric(strftime(guess_datetime(end_date, date.only=TRUE), format="%Y%m%d"))
+    out <- out[out$SQLDATE >= start_date_numeric & out$SQLDATE <= end_date_numeric,]
+  }
   return(out)
 }

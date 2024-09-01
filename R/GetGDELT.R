@@ -74,7 +74,7 @@ GetGDELT <- function(start_date,
                      verbose=TRUE) {
   
   # Coerce ending slashes as needed
-  
+
   local_folder <- StripTrailingSlashes(path.expand(local_folder))
   data_url_root <- paste(StripTrailingSlashes(data_url_root), "/", sep="")
   # create the local_folder if is doesn't exist
@@ -83,8 +83,9 @@ GetGDELT <- function(start_date,
   start_date <- strftime(guess_datetime(start_date, date.only=TRUE), format="%Y-%m-%d")
   end_date <- strftime(guess_datetime(end_date, date.only=TRUE), format="%Y-%m-%d")
   
-  if(start_date <= "2014-01-25" & end_date >= "2014-01-23") warning("Your date range includes some or all of Feb 23-25, 2014. GDELT data is not available for these dates.")
-  
+  if(start_date <= "2014-01-25" & end_date >= "2014-01-23") 
+      warning("Your date range includes some or all of Feb 23-25, 2014. GDELT data is not available for these dates.")
+
   out_initialized <- FALSE
   
   # Determine file list based on dates
@@ -121,7 +122,8 @@ GetGDELT <- function(start_date,
                                      data_url_root=data_url_root,
                                      verbose=verbose)
     if(FALSE == download_result) {
-      stop("Unable to download file ", this_file, ". Please try again. If you get this result again, the file might not be available on the server.")
+      warning("Unable to download file ", this_file)
+      next
     }
     if(FALSE == IsValidGDELT(f=this_file, local_folder=local_folder)) {
       # try again

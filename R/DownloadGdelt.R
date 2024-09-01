@@ -9,7 +9,7 @@ DownloadGdelt <- function(f,
                           max_local_mb,
                           data_url_root="http://data.gdeltproject.org/events/",
                           verbose=TRUE) {
-  
+
   # Guardians
   if(!missing(max_local_mb)) stopifnot(max_local_mb >= 0)
   # Add guardian to ensure URLs end with a slash
@@ -18,6 +18,7 @@ DownloadGdelt <- function(f,
   if(missing(local_folder)) local_folder <- tempdir()
   # Coerce ending slashes as needed
   local_folder <- StripTrailingSlashes(path.expand(local_folder))
+  local_file <- paste(local_folder, "/", f, sep="")
   data_url_root <- paste(StripTrailingSlashes(data_url_root), "/", sep="")
   
   # Download the file
@@ -25,10 +26,16 @@ DownloadGdelt <- function(f,
   options(HTTPUserAgent=paste("GDELTtools v", packageVersion("GDELTtools"),
                               " in ", getOption("HTTPUserAgent"),
                               sep=""))
-  result <- download.file(url=paste(data_url_root, f, sep=""),
-                          destfile=paste(local_folder, "/", f, sep=""),
-                          quiet=!verbose)
-  if(0 != result) return(FALSE)
+
+  result <- tryCatch({
+    download.file(url=paste(data_url_root, f, sep=""),
+                 destfile=local_file,
+                 quiet=!verbose)
+  },
+  warning = function(e) {
+    return(1)
+  })
+  if(result != 0 || !file.exists(local_file)) return(FALSE)
   options(op)
   
   # Clean up if necessary
